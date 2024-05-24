@@ -33,8 +33,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  private messages: Message[] = [];
-  private clients = new Map<string, ClientInfo>();
+  public messages: Message[] = [];
+  public clients = new Map<string, ClientInfo>();
 
   handleConnection(
     client: Socket,
@@ -46,7 +46,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       ? clientIdQuery[0]
       : clientIdQuery;
     clientId = clientId !== null && clientId !== undefined ? clientId : null;
-
     const letterNameQuery = client.handshake.query.letterName;
     let letterName = Array.isArray(letterNameQuery)
       ? letterNameQuery[0]
@@ -57,7 +56,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         : null;
 
     let clientInfo: ClientInfo;
-
     if (clientId === null || clientId === "null") {
       clientInfo = {
         clientId: client.id,
@@ -76,10 +74,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.emit("userInfo", clientInfo);
     client.emit("allMessages", this.messages);
     this.emitAllUsers();
+    
   }
 
   handleDisconnect(client: Socket) {
-    this.clients.delete(client.id);
+    const clientId = client.handshake.query.clientId || client.id;
+    this.clients.delete(clientId as string);
     this.emitAllUsers();
   }
 
@@ -88,8 +88,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     let clientInfo = this.clients.get(client.id);
 
     if (!clientInfo) {
-      const clientId = client.handshake.query.clientId.toString() || client.id;
-  
+      const clientId = client.handshake.query.clientId.toString() 
       clientInfo = {
         clientId: clientId,
         letterName: "",
@@ -120,7 +119,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     const firstLetter = fullName.trim()[0];
-    const clientInfo = this.clients.get(client.id);
+    const clientId = client.handshake.query.clientId || client.id;
+    const clientInfo = this.clients.get(clientId as string);
     if (clientInfo) {
       clientInfo.letterName = firstLetter;
       this.clients.set(client.id, clientInfo);
@@ -128,6 +128,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.emitAllUsers();
     }
   }
+
   private emitAllUsers() {
     const users = Array.from(this.clients.values());
     this.server.emit("allUsers", users);
