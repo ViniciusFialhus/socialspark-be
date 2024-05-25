@@ -24,11 +24,12 @@ interface ClientInfo {
 
 @WebSocketGateway({
   cors: {
-    origin: ['*'],
+    origin: '*',
     methods: ["GET", "POST"],
     credentials: true,
   },
 })
+
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
