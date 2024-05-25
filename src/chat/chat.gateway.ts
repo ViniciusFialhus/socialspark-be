@@ -24,7 +24,7 @@ interface ClientInfo {
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: 'https://socialspark-fe-btvo.vercel.app',
     methods: ["GET", "POST"],
     credentials: true,
   },
