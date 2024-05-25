@@ -24,7 +24,7 @@ interface ClientInfo {
 
 @WebSocketGateway({
   cors: {
-    origin: ["http://localhost:3001"],
+    origin: ['*'],
     methods: ["GET", "POST"],
     credentials: true,
   },
