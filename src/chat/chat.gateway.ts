@@ -24,12 +24,11 @@ interface ClientInfo {
 
 @WebSocketGateway({
   cors: {
-    origin: 'https://socialspark-fe.vercel.app',
+    origin: ['https://socialspark-fe.vercel.app', 'http://localhost:3001'],
     methods: ["GET", "POST"],
     credentials: true,
   },
 })
-
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -70,17 +69,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         connected: client.connected,
       };
     }
-
     this.clients.set(clientInfo.clientId, clientInfo);
     client.emit("userInfo", clientInfo);
     client.emit("allMessages", this.messages);
     this.emitAllUsers();
-    
   }
 
   handleDisconnect(client: Socket) {
-    const clientId = client.handshake.query.clientId || client.id;
-    this.clients.delete(clientId as string);
+    const clientId = client.id;
+
+    let clientInfo;
+    if (this.clients.has(clientId)) {
+      clientInfo = this.clients.get(clientId);
+      this.clients.delete(clientId);
+    } else {
+      const handshakeClientId = client.handshake.query.clientId;
+      const finalClientId = Array.isArray(handshakeClientId) ? handshakeClientId[0] : handshakeClientId;
+
+      if (finalClientId && this.clients.has(finalClientId)) {
+        clientInfo = this.clients.get(finalClientId);
+        this.clients.delete(finalClientId);
+      }
+    }
+
     this.emitAllUsers();
   }
 
@@ -89,7 +100,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     let clientInfo = this.clients.get(client.id);
 
     if (!clientInfo) {
-      const clientId = client.handshake.query.clientId.toString() 
+      const clientId = client.handshake.query.clientId.toString();
       clientInfo = {
         clientId: clientId,
         letterName: "",
